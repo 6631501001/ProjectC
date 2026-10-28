@@ -1,0 +1,22 @@
+{
+  "name": "oxide-centralized-bot-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Centralized bot monitoring, control plane and order tracking service for the Oxide candidate challenge",
+  "scripts": {
+    "start": "node api/src/server.js",
+    "dev": "node --watch api/src/server.js",
+    "test": "node --test api/test/*.test.js",
+    "test:smoke": "node api/test/smoke.mjs"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "dotenv": "18.0.9",
+    "express": "4.22.3",
+    "helmet": "8.3.0",
+    "multer": "2.5.0",
+    "pg": "8.23.1",
+    "ws": "8.22.0"
+  }
+}

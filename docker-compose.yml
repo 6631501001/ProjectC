@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: oxide_monitor
+      POSTGRES_USER: oxide
+      POSTGRES_PASSWORD: oxide_dev
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - oxide_candidate_pg:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/002-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oxide -d oxide_monitor"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  simulator:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "server.js"]
+    volumes:
+      - ./simulator:/app:ro
+    environment:
+      PORT: 8788
+    ports:
+      - "127.0.0.1:8788:8788"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8788/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://oxide:oxide_dev@postgres:5432/oxide_monitor
+      BOT_SIMULATOR_URL: http://simulator:8788
+      HEARTBEAT_INTERVAL_MS: 5000
+      HEARTBEAT_TIMEOUT_MS: 20000
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_MB: 25
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - oxide_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      simulator:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  oxide_candidate_pg:
+  oxide_uploads:

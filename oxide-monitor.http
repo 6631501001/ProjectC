@@ -1,0 +1,84 @@
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### Health check
+GET {{baseUrl}}/health
+
+### Dashboard overview
+GET {{baseUrl}}/api/overview
+
+### List bot instances
+GET {{baseUrl}}/api/bots
+
+### Bot metrics
+GET {{baseUrl}}/api/bots/bot-01/metrics
+
+### Bot logs
+GET {{baseUrl}}/api/bots/bot-01/logs
+
+### Start bot (idempotent request)
+POST {{baseUrl}}/api/bots/bot-01/commands
+Content-Type: {{contentType}}
+Idempotency-Key: candidate-start-bot-01-001
+
+{
+  "command": "start",
+  "requestedBy": "postman"
+}
+
+### Enable global kill switch
+POST {{baseUrl}}/api/control/kill-switch
+Content-Type: {{contentType}}
+
+{
+  "enabled": true,
+  "reason": "Testing global pause",
+  "actor": "postman"
+}
+
+### Disable global kill switch
+POST {{baseUrl}}/api/control/kill-switch
+Content-Type: {{contentType}}
+
+{
+  "enabled": false,
+  "reason": "Resume after test",
+  "actor": "postman"
+}
+
+### Create order (duplicate externalOrderId is idempotent)
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "externalOrderId": "API-TEST-1001",
+  "amount": 299.00,
+  "currency": "THB",
+  "actor": "postman"
+}
+
+### Dispatch order (use numeric ID or externalOrderId)
+POST {{baseUrl}}/api/orders/API-TEST-1001/dispatch
+Content-Type: {{contentType}}
+
+{
+  "actor": "postman"
+}
+
+### Complete the dispatched in-progress order
+POST {{baseUrl}}/api/orders/API-TEST-1001/transition
+Content-Type: {{contentType}}
+
+{
+  "status": "COMPLETED",
+  "actor": "postman"
+}
+
+### Query order timeline
+GET {{baseUrl}}/api/orders/API-TEST-1001
+
+### Recent audit activity
+GET {{baseUrl}}/api/activity?limit=30
+
+### Upload deployment ZIP (replace ./sample.zip with your ZIP archive)
+# curl -X POST http://localhost:3000/api/deployments -F 'package=@./sample.zip' -F 'targetBotIds=bot-01,bot-02'
